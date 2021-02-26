@@ -1,0 +1,241 @@
+version: '2.3'
+
+services:
+    service-gateway:
+      build:
+        context: .
+        dockerfile: docker/fastapi.Dockerfile
+        args:
+          - REST_HOST=${REST_HOST}
+          - REST_PORT=${REST_PORT}
+          - REST_SECRET_KEY=${REST_SECRET_KEY}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_CACHE_DB=${KEYDB_CACHE_DB}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KEYDB_REGISTER_DB=${KEYDB_REGISTER_DB}
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_DETECTOR_TOPIC=${KAFKA_DETECTOR_TOPIC}
+          - MILVUS_HOST=${MILVUS_HOST}
+          - MILVUS_PORT=${MILVUS_PORT}
+          - MONGODB_HOST=${MONGODB_HOST}
+          - MONGODB_PORT=${MONGODB_PORT}
+          - MONGODB_USER=${MONGODB_USER}
+          - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+          - MONGODB_DATABASE=${MONGODB_DATABASE}
+      ports:
+        - "9099:80"
+      environment:
+        - APP_MODULE=controller.rest_fastapi:server
+        - WORKERS_PER_CORE=0.5
+        - MAX_WORKERS=4
+        - HOST=0.0.0.0
+        - PORT=80
+        - LOG_LEVEL=debug
+      volumes:
+        - ${PWD}:/app
+      networks:
+        jeeai-faceid:
+          aliases:
+            - servicegateway
+      working_dir: /app
+      restart: always
+
+    detector:
+      build:
+        context: .
+        dockerfile: docker/detector.Dockerfile
+        args:
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_DETECTOR_TOPIC=${KAFKA_DETECTOR_TOPIC}
+          - KAFKA_DETECTOR_CONSUMER_GROUP=${KAFKA_DETECTOR_CONSUMER_GROUP}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_CACHE_DB=${KEYDB_CACHE_DB}
+          - KEYDB_REGISTER_DB=${KEYDB_REGISTER_DB}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KAFKA_EMBEDDER_TOPIC=${KAFKA_EMBEDDER_TOPIC}
+          - KEYDB_REGISTER_BUFFER=${KEYDB_REGISTER_BUFFER}
+          - KAFKA_REGISTER_RESPONSE_TOPIC=${KAFKA_REGISTER_RESPONSE_TOPIC}
+          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+          - COMPUTE_ENGINE_BACKEND=${COMPUTE_ENGINE_BACKEND}
+      runtime: nvidia
+      volumes:
+        - ${PWD}:/app
+#        - ${PWD}/static/logs:/app/static/logs
+      working_dir: /app
+      entrypoint: ["python", "worker/detector.py"]
+      networks:
+        jeeai-faceid:
+          aliases:
+            - detector_
+      restart: always
+
+    embedder:
+      build:
+        context: .
+        dockerfile: docker/embedder.Dockerfile
+        args:
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_EMBEDDER_TOPIC=${KAFKA_EMBEDDER_TOPIC}
+          - KAFKA_EMBEDDER_CONSUMER_GROUP=${KAFKA_EMBEDDER_CONSUMER_GROUP}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+          - KEYDB_CACHE_DB=${KEYDB_CACHE_DB}
+          - KEYDB_COUNT_SESSION_FRAME=${KEYDB_COUNT_SESSION_FRAME}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KEYDB_REGISTER_BUFFER=${KEYDB_REGISTER_BUFFER}
+          - KEYDB_VERIFIER_BUFFER=${KEYDB_VERIFIER_BUFFER}
+          - KAFKA_RECOGNIZER_RESPONSE_TOPIC=${KAFKA_RECOGNIZER_RESPONSE_TOPIC}
+          - KAFKA_UPDATER_TOPIC=${KAFKA_UPDATER_TOPIC}
+          - NUMBER_OF_QUERY_FRAME=${NUMBER_OF_QUERY_FRAME}
+          - MILVUS_HOST=${MILVUS_HOST}
+          - MILVUS_PORT=${MILVUS_PORT}
+          - MONGODB_HOST=${MONGODB_HOST}
+          - MONGODB_PORT=${MONGODB_PORT}
+          - MONGODB_USER=${MONGODB_USER}
+          - MONGODB_PASSWORD=${MONGODB_PASSWORD}
+          - MONGODB_DATABASE=${MONGODB_DATABASE}
+          - COMPUTE_ENGINE_BACKEND=${COMPUTE_ENGINE_BACKEND}
+      runtime: nvidia
+      volumes:
+        - ${PWD}:/app
+      working_dir: /app
+      entrypoint: ["python", "worker/embedder.py"]
+      networks:
+        jeeai-faceid:
+          aliases:
+            - embedder_
+      restart: always
+
+    register-response-handler:
+      build:
+        context: .
+        dockerfile: docker/register.Dockerfile
+        args:
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_REGISTER_RESPONSE_TOPIC=${KAFKA_REGISTER_RESPONSE_TOPIC}
+          - KAFKA_REGISTER_RESPONSE_CONSUMER_GROUP=${KAFKA_REGISTER_RESPONSE_CONSUMER_GROUP}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KEYDB_REGISTER_BUFFER=${KEYDB_REGISTER_BUFFER}
+          - NUMBER_OF_REGISTER_FRAME=${NUMBER_OF_REGISTER_FRAME}
+          - MILVUS_HOST=${MILVUS_HOST}
+          - MILVUS_PORT=${MILVUS_PORT}
+      volumes:
+        - ${PWD}:/app
+      networks:
+        jeeai-faceid:
+          aliases:
+            - register_response_handler_
+      working_dir: /app
+      entrypoint: ["python", "controller/register.py"]
+      restart: always
+
+    recognizer-response-handler:
+      build:
+        context: .
+        dockerfile: docker/recognizer.Dockerfile
+        args:
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_RECOGNIZER_RESPONSE_TOPIC=${KAFKA_RECOGNIZER_RESPONSE_TOPIC}
+          - KAFKA_RECOGNIZER_RESPONSE_CONSUMER_GROUP=${KAFKA_RECOGNIZER_RESPONSE_CONSUMER_GROUP}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KEYDB_QUERY_CACHE=${KEYDB_QUERY_CACHE}
+          - TOP_K_SIMILAR=${TOP_K_SIMILAR}
+          - NUMBER_OF_RECOGNIZER_CONFIDENCE_FRAME=${NUMBER_OF_RECOGNIZER_CONFIDENCE_FRAME}
+          - RECOGNIZER_MEAN_THRESHOLD=${RECOGNIZER_MEAN_THRESHOLD}
+          - RECOGNIZER_MIN_THRESHOLD=${RECOGNIZER_MIN_THRESHOLD}
+          - RECOGNIZER_MAX_THRESHOLD=${RECOGNIZER_MAX_THRESHOLD}
+          - MILVUS_HOST=${MILVUS_HOST}
+          - MILVUS_PORT=${MILVUS_PORT}
+      volumes:
+        - ${PWD}:/app
+      networks:
+        jeeai-faceid:
+          aliases:
+            - recognizer_response_handler_
+      working_dir: /app
+      entrypoint: ["python", "controller/recognizer.py"]
+      restart: always
+
+    verifier-response-handler:
+      build:
+        context: .
+        dockerfile: docker/verifier.Dockerfile
+        args:
+          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+          - KAFKA_VERIFIER_RESPONSE_TOPIC=${KAFKA_VERIFIER_RESPONSE_TOPIC}
+          - KAFKA_VERIFIER_CONSUMER_GROUP=${KAFKA_VERIFIER_CONSUMER_GROUP}
+          - KEYDB_HOST=${KEYDB_HOST}
+          - KEYDB_PORT=${KEYDB_PORT}
+          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+          - KEYDB_VERIFIER_BUFFER=${KEYDB_VERIFIER_BUFFER}
+          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+          - KEYDB_VERIFIER_QUERY_CACHE_DB=${KEYDB_VERIFIER_QUERY_CACHE_DB}
+          - NUMBER_OF_VERIFIER_CONFIDENCE_FRAME=${NUMBER_OF_VERIFIER_CONFIDENCE_FRAME}
+          - VERIFIER_MIN_THRESHOLD=${VERIFIER_MIN_THRESHOLD}
+          - VERIFIER_MAX_THRESHOLD=${VERIFIER_MAX_THRESHOLD}
+          - VERIFIER_MEAN_THRESHOLD=${VERIFIER_MEAN_THRESHOLD}
+          - MILVUS_HOST=${MILVUS_HOST}
+          - MILVUS_PORT=${MILVUS_PORT}
+          - TOP_K_SIMILAR=${TOP_K_SIMILAR}
+      volumes:
+        - ${PWD}:/app
+      networks:
+        jeeai-faceid:
+          aliases:
+            - verifier_response_handler_
+      working_dir: /app
+      entrypoint: ["python", "controller/verifier.py"]
+      restart: always
+
+#    updater:
+#      build:
+#        context: .
+#        dockerfile: docker/updater.Dockerfile
+#        args:
+#          - KAFKA_UPDATER_TOPIC=${KAFKA_UPDATER_TOPIC}
+#          - NUMBER_OF_KEEP_FRAME=${NUMBER_OF_KEEP_FRAME}
+#          - KAFKA_BOOTSTRAP_SERVERS=${KAFKA_BOOTSTRAP_SERVERS}
+#          - KAFKA_VERIFIER_RESPONSE_TOPIC=${KAFKA_VERIFIER_RESPONSE_TOPIC}
+#          - KAFKA_VERIFIER_CONSUMER_GROUP=${KAFKA_VERIFIER_CONSUMER_GROUP}
+#          - KEYDB_HOST=${KEYDB_HOST}
+#          - KEYDB_PORT=${KEYDB_PORT}
+#          - KEYDB_PASSWORD=${KEYDB_PASSWORD}
+#          - KEYDB_KEY_TTL=${KEYDB_KEY_TTL}
+#          - KEYDB_VERIFIER_BUFFER=${KEYDB_VERIFIER_BUFFER}
+#          - KEYDB_DONE_SESSION_DB=${KEYDB_DONE_SESSION_DB}
+#          - KEYDB_VERIFIER_QUERY_CACHE_DB=${KEYDB_VERIFIER_QUERY_CACHE_DB}
+#          - NUMBER_OF_VERIFIER_CONFIDENCE_FRAME=${NUMBER_OF_VERIFIER_CONFIDENCE_FRAME}
+#          - VERIFIER_MIN_THRESHOLD=${VERIFIER_MIN_THRESHOLD}
+#          - VERIFIER_MAX_THRESHOLD=${VERIFIER_MAX_THRESHOLD}
+#          - VERIFIER_MEAN_THRESHOLD=${VERIFIER_MEAN_THRESHOLD}
+#          - MILVUS_HOST=${MILVUS_HOST}
+#          - MILVUS_PORT=${MILVUS_PORT}
+#          - TOP_K_SIMILAR=${TOP_K_SIMILAR}
+#      volumes:
+#        - ${PWD}:/app
+#      networks:
+#        jeeai-faceid:
+#          aliases:
+#            - updater_
+#      working_dir: /app
+#      entrypoint: ["python", "controller/updater.py"]
+#      restart: always
+
+networks:
+    jeeai-faceid:
+      external: true

@@ -1,0 +1,45 @@
+version: '2.3'
+
+services:
+  milvus:
+#    image: milvusdb/milvus:0.10.0-cpu-d061620-5f3c00
+    image: milvusdb/milvus:0.10.3-gpu-d091720-f962e8
+    ports:
+      - "9090:19530"
+      - "9091:19121"
+      - "19530:19530"
+      - "19122:19121"
+    runtime: nvidia
+    volumes:
+      - ${PWD}/static/milvus/db:/var/lib/milvus/db
+      - ${PWD}/static/milvus/conf:/var/lib/milvus/conf
+      - ${PWD}/static/milvus/logs:/var/lib/milvus/logs
+      - ${PWD}/static/milvus/wal:/var/lib/milvus/wal
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - gpus=all
+    networks:
+      jeeai-faceid:
+        aliases:
+          - milvus
+    restart: always
+
+  mongo:
+    image: mongo
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=dps
+      - MONGO_INITDB_ROOT_PASSWORD=dps123
+    ports:
+      - "9092:27017"
+      - "27017:27017"
+    volumes:
+      - ${PWD}/static/mongo/data:/data/db
+    networks:
+      jeeai-faceid:
+        aliases:
+          - mongo
+    restart: always
+
+networks:
+  jeeai-faceid:
+    external: true
