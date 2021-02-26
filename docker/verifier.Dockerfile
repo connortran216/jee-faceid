@@ -80,6 +80,8 @@ RUN pip install redis==3.5.3
 
 RUN pip install numpy==1.18.5
 
+RUN pip install confluent-kafka==1.5.0
+
 RUN pip install dpsutil==1.3.10
 
 ENV PYTHONPATH=/app
