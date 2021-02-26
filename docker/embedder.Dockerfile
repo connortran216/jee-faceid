@@ -87,6 +87,8 @@ ADD ./docker/requirements/embedder.rs requirements.txt
 
 RUN pip install -r requirements.txt
 
+RUN pip install confluent-kafka==1.5.0
+
 RUN pip install dpsutil==1.3.10
 
 ENV PYTHONPATH=/app
