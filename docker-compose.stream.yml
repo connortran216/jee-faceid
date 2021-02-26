@@ -42,8 +42,8 @@ services:
     volumes:
       - ./static/keydb/data:/data
       - ./static/keydb/keydb.conf:/etc/keydb/keydb.conf
-#    ports:
-#      - "6379:6379"
+    ports:
+      - "6379:6379"
     networks:
       jeeai-faceid:
         aliases:
