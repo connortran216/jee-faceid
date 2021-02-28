@@ -2,7 +2,7 @@ version: '2.3'
 
 services:
   milvus:
-   image: milvusdb/milvus:0.10.0-cpu-d061620-5f3c00
+    image: milvusdb/milvus:0.10.0-cpu-d061620-5f3c00
 #     image: milvusdb/milvus:0.10.3-gpu-d091720-f962e8
     ports:
       - "9090:19530"
