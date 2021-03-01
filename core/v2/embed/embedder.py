@@ -14,7 +14,8 @@ from core.v2.embed.insight_face import InsightFace, IR_50
 class FaceEmbedder(object):
     def __init__(self, model_path, backbone=IR_50, face_size=(112, 112), device=os.environ.get('COMPUTE_ENGINE_BACKEND', 'cuda')):
         # Load embedding model
-        device = 'cuda'
+#         device = 'cuda'
+        device = 'cpu'
         self.embedder = InsightFace(backbone, face_size)
         self.embedder.load_model(model_path, device)
 
