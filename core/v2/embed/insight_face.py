@@ -38,7 +38,7 @@ class InsightFace(object):
         else:
             pretrained_dict = torch.load(pretrained_path)
 
-        pretrained_dict = torch.load(pretrained_path)
+#         pretrained_dict = torch.load(pretrained_path)
 
         if "state_dict" in pretrained_dict.keys():
             pretrained_dict = remove_prefix(pretrained_dict['state_dict'], 'module.')
