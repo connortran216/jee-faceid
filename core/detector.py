@@ -29,7 +29,8 @@ class ConfigFaceDetector(FTPServerConfig):
         from core.model.model import MobileNetV1
 
         # self.device = os.environ.get('COMPUTE_ENGINE_BACKEND', 'cuda')
-        self.device = 'cuda'
+#         self.device = 'cuda'
+        self.device = 'cpu'
 
         # config of MobileNetV1
         self.model_backbone = MobileNetV1
