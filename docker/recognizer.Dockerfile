@@ -57,6 +57,8 @@ RUN apt-get install -y build-essential software-properties-common gcc g++ musl-d
 
 ADD ./docker/requirements/recognizer.rs requirements.txt
 
+COPY . /app
+
 RUN pip install -r requirements.txt
 
 RUN pip install scikit-build cmake
