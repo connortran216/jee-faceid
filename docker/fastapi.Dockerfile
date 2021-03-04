@@ -58,4 +58,6 @@ RUN pip install python-multipart==0.0.5
 RUN pip install Cython
 RUN pip install scikit-build
 
+COPY . /app
+
 ENV PYTHONPATH=/app
