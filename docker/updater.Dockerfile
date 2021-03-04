@@ -86,4 +86,6 @@ RUN pip install numpy==1.18.5
 
 RUN pip install dpsutil
 
+COPY . /app
+
 ENV PYTHONPATH=/app
