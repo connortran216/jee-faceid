@@ -66,4 +66,6 @@ RUN pip install confluent-kafka==1.5.0
 
 RUN pip install dpsutil==1.3.10
 
+COPY . /app
+
 ENV PYTHONPATH=/app
