@@ -47,6 +47,8 @@ RUN apt-get install -y build-essential software-properties-common gcc g++ musl-d
 
 ADD ./docker/requirements/register.rs requirements.txt
 
+COPY . /app
+
 RUN pip install grpcio==1.22.0 grpcio-tools==1.22.0
 RUN pip install pymilvus==0.2.13
 RUN pip install -r requirements.txt
